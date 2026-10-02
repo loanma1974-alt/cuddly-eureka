@@ -13135,3 +13135,510 @@ task.spawn(function()
 		end
 	end
 end)
+-- ═══════════════════════════════════════════════════════════
+-- UI CREATION — connects to existing tbl state
+-- Paste at the END of the script
+-- ═══════════════════════════════════════════════════════════
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "KrampusUI_" .. tostring(math.random(1000, 9999))
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = gethui and gethui() or localPlayer:WaitForChild("PlayerGui")
+
+local Window = Instance.new("Frame")
+Window.Size = UDim2.new(0, 540, 0, 380)
+Window.Position = UDim2.new(0.5, -270, 0.5, -190)
+Window.BackgroundColor3 = theme.background
+Window.BorderSizePixel = 0
+Window.Active = true
+Window.Parent = ScreenGui
+
+local WindowCorner = Instance.new("UICorner")
+WindowCorner.CornerRadius = UDim.new(0, 8)
+WindowCorner.Parent = Window
+
+local WindowStroke = Instance.new("UIStroke")
+WindowStroke.Color = theme.stroke
+WindowStroke.Thickness = 1
+WindowStroke.Parent = Window
+
+-- Title bar
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 34)
+TitleBar.BackgroundColor3 = theme.topbar
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = Window
+
+local TitleText = Instance.new("TextLabel")
+TitleText.Size = UDim2.new(1, -70, 1, 0)
+TitleText.Position = UDim2.new(0, 12, 0, 0)
+TitleText.BackgroundTransparency = 1
+TitleText.Text = "KRAMPUS"
+TitleText.TextColor3 = theme.text
+TitleText.TextSize = 15
+TitleText.Font = Enum.Font.GothamBold
+TitleText.TextXAlignment = Enum.TextXAlignment.Left
+TitleText.Parent = TitleBar
+
+-- Close
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 28, 0, 28)
+CloseBtn.Position = UDim2.new(1, -32, 0, 3)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(191, 54, 74)
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 13
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Parent = TitleBar
+
+local CB = Instance.new("UICorner")
+CB.CornerRadius = UDim.new(0, 5)
+CB.Parent = CloseBtn
+
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- Minimize
+local MinBtn = Instance.new("TextButton")
+MinBtn.Size = UDim2.new(0, 28, 0, 28)
+MinBtn.Position = UDim2.new(1, -64, 0, 3)
+MinBtn.BackgroundColor3 = theme.accentDark
+MinBtn.Text = "–"
+MinBtn.TextColor3 = theme.text
+MinBtn.TextSize = 16
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.Parent = TitleBar
+
+local MB = Instance.new("UICorner")
+MB.CornerRadius = UDim.new(0, 5)
+MB.Parent = MinBtn
+
+local minimized = false
+MinBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    Window.Size = minimized and UDim2.new(0, 540, 0, 34) or UDim2.new(0, 540, 0, 380)
+end)
+
+-- Toggle with RightShift
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        ScreenGui.Enabled = not ScreenGui.Enabled
+    end
+end)
+
+-- Drag
+local dragging = false
+local dragStart, startPos = nil, nil
+
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+       or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = Window.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+       or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        Window.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+       or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+-- ═════════════════════════════════════════════
+-- TAB SYSTEM
+-- ═════════════════════════════════════════════
+
+local TabList = Instance.new("ScrollingFrame")
+TabList.Size = UDim2.new(0, 130, 1, -34)
+TabList.Position = UDim2.new(0, 0, 0, 34)
+TabList.BackgroundTransparency = 1
+TabList.BorderSizePixel = 0
+TabList.ScrollBarThickness = 2
+TabList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+TabList.Parent = Window
+
+local TabListLayout = Instance.new("UIListLayout")
+TabListLayout.Padding = UDim.new(0, 3)
+TabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+TabListLayout.Parent = TabList
+
+local TabListPad = Instance.new("UIPadding")
+TabListPad.PaddingTop = UDim.new(0, 6)
+TabListPad.PaddingLeft = UDim.new(0, 6)
+TabListPad.PaddingRight = UDim.new(0, 6)
+TabListPad.Parent = TabList
+
+local Content = Instance.new("Frame")
+Content.Size = UDim2.new(1, -130, 1, -34)
+Content.Position = UDim2.new(0, 130, 0, 34)
+Content.BackgroundColor3 = Color3.fromRGB(20, 10, 12)
+Content.BorderSizePixel = 0
+Content.ClipsDescendants = true
+Content.Parent = Window
+
+local CC2 = Instance.new("UICorner")
+CC2.CornerRadius = UDim.new(0, 8)
+CC2.Parent = Content
+
+-- ═════════════════════════════════════════════
+-- COMPONENT BUILDERS
+-- ═════════════════════════════════════════════
+
+local tabOrder = 0
+local activePage = nil
+
+local function createTab(name)
+    tabOrder = tabOrder + 1
+
+    local TabBtn = Instance.new("TextButton")
+    TabBtn.Size = UDim2.new(1, 0, 0, 30)
+    TabBtn.BackgroundColor3 = theme.tabIdle
+    TabBtn.BorderSizePixel = 0
+    TabBtn.Text = " " .. name
+    TabBtn.TextColor3 = theme.mutedText
+    TabBtn.TextSize = 12
+    TabBtn.Font = Enum.Font.Gotham
+    TabBtn.TextXAlignment = Enum.TextXAlignment.Left
+    TabBtn.LayoutOrder = tabOrder
+    TabBtn.Parent = TabList
+
+    local TB = Instance.new("UICorner")
+    TB.CornerRadius = UDim.new(0, 5)
+    TB.Parent = TabBtn
+
+    local Page = Instance.new("ScrollingFrame")
+    Page.Size = UDim2.new(1, -12, 1, -12)
+    Page.Position = UDim2.new(0, 6, 0, 6)
+    Page.BackgroundTransparency = 1
+    Page.BorderSizePixel = 0
+    Page.ScrollBarThickness = 2
+    Page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    Page.Visible = false
+    Page.Parent = Content
+
+    local PL = Instance.new("UIListLayout")
+    PL.Padding = UDim.new(0, 5)
+    PL.SortOrder = Enum.SortOrder.LayoutOrder
+    PL.Parent = Page
+
+    TabBtn.MouseButton1Click:Connect(function()
+        for _, c in ipairs(Content:GetChildren()) do
+            if c:IsA("ScrollingFrame") then c.Visible = false end
+        end
+        for _, b in ipairs(TabList:GetChildren()) do
+            if b:IsA("TextButton") then
+                b.TextColor3 = theme.mutedText
+                b.BackgroundColor3 = theme.tabIdle
+            end
+        end
+        Page.Visible = true
+        TabBtn.TextColor3 = theme.text
+        TabBtn.BackgroundColor3 = theme.tabHover
+    end)
+
+    if tabOrder == 1 then
+        Page.Visible = true
+        TabBtn.TextColor3 = theme.text
+        TabBtn.BackgroundColor3 = theme.tabHover
+    end
+
+    -- Return section builders for this page
+    local API = {}
+    local sectionOrder = 0
+    local controlOrder = 0
+
+    function API:AddSection(title)
+        sectionOrder = sectionOrder + 1
+        controlOrder = 0
+
+        local Section = Instance.new("Frame")
+        Section.Size = UDim2.new(1, 0, 0, 0)
+        Section.AutomaticSize = Enum.AutomaticSize.Y
+        Section.BackgroundColor3 = theme.pageCard
+        Section.BorderSizePixel = 0
+        Section.LayoutOrder = sectionOrder
+        Section.Parent = Page
+
+        local SC = Instance.new("UICorner")
+        SC.CornerRadius = UDim.new(0, 6)
+        SC.Parent = Section
+
+        local SL = Instance.new("UIListLayout")
+        SL.Padding = UDim.new(0, 4)
+        SL.Parent = Section
+
+        local SP = Instance.new("UIPadding")
+        SP.PaddingTop = UDim.new(0, 8)
+        SP.PaddingBottom = UDim.new(0, 8)
+        SP.PaddingLeft = UDim.new(0, 10)
+        SP.PaddingRight = UDim.new(0, 10)
+        SP.Parent = Section
+
+        local Header = Instance.new("TextLabel")
+        Header.Size = UDim2.new(1, 0, 0, 18)
+        Header.BackgroundTransparency = 1
+        Header.Text = title
+        Header.TextColor3 = theme.accent
+        Header.TextSize = 12
+        Header.Font = Enum.Font.GothamBold
+        Header.TextXAlignment = Enum.TextXAlignment.Left
+        Header.Parent = Section
+
+        local SA = {}
+        local co = 0
+
+        function SA:AddToggle(text, flagName, callback)
+            co = co + 1
+
+            local Container = Instance.new("Frame")
+            Container.Size = UDim2.new(1, 0, 0, 30)
+            Container.BackgroundTransparency = 1
+            Container.LayoutOrder = co
+            Container.Parent = Section
+
+            local Toggle = Instance.new("TextButton")
+            Toggle.Size = UDim2.new(0, 40, 0, 20)
+            Toggle.Position = UDim2.new(1, -40, 0.5, -10)
+            Toggle.BackgroundColor3 = flags[flagName] and theme.accent or theme.panelAlt
+            Toggle.BorderSizePixel = 0
+            Toggle.Text = ""
+            Toggle.Parent = Container
+
+            local TC = Instance.new("UICorner")
+            TC.CornerRadius = UDim.new(0, 10)
+            TC.Parent = Toggle
+
+            local Knob = Instance.new("Frame")
+            Knob.Size = UDim2.new(0, 16, 0, 16)
+            Knob.Position = flags[flagName] and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
+            Knob.BackgroundColor3 = theme.text
+            Knob.BorderSizePixel = 0
+            Knob.Parent = Toggle
+
+            local KC = Instance.new("UICorner")
+            KC.CornerRadius = UDim.new(1, 0)
+            KC.Parent = Knob
+
+            local Label = Instance.new("TextLabel")
+            Label.Size = UDim2.new(1, -50, 1, 0)
+            Label.BackgroundTransparency = 1
+            Label.Text = text
+            Label.TextColor3 = theme.text
+            Label.TextSize = 12
+            Label.Font = Enum.Font.Gotham
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.Parent = Container
+
+            local state = flags[flagName] or false
+
+            local function setState(newState)
+                state = newState
+                flags[flagName] = newState
+                TweenService:Create(Toggle, TweenInfo.new(0.15), {
+                    BackgroundColor3 = newState and theme.accent or theme.panelAlt
+                }):Play()
+                TweenService:Create(Knob, TweenInfo.new(0.15), {
+                    Position = newState and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
+                }):Play()
+                if callback then
+                    callback(newState)
+                end
+            end
+
+            Toggle.MouseButton1Click:Connect(function()
+                setState(not state)
+            end)
+
+            return { Set = setState, Get = function() return state end }
+        end
+
+        function SA:AddButton(text, callback)
+            co = co + 1
+
+            local Btn = Instance.new("TextButton")
+            Btn.Size = UDim2.new(1, 0, 0, 30)
+            Btn.BackgroundColor3 = theme.accentDark
+            Btn.BorderSizePixel = 0
+            Btn.Text = text
+            Btn.TextColor3 = theme.text
+            Btn.TextSize = 12
+            Btn.Font = Enum.Font.GothamBold
+            Btn.LayoutOrder = co
+            Btn.Parent = Section
+
+            local BC = Instance.new("UICorner")
+            BC.CornerRadius = UDim.new(0, 5)
+            BC.Parent = Btn
+
+            if callback then
+                Btn.MouseButton1Click:Connect(callback)
+            end
+        end
+
+        function SA:AddSlider(text, flagName, min, max, callback)
+            co = co + 1
+
+            local Container = Instance.new("Frame")
+            Container.Size = UDim2.new(1, 0, 0, 50)
+            Container.BackgroundTransparency = 1
+            Container.LayoutOrder = co
+            Container.Parent = Section
+
+            local Label = Instance.new("TextLabel")
+            Label.Size = UDim2.new(1, 0, 0, 16)
+            Label.BackgroundTransparency = 1
+            Label.Text = text .. ": " .. tostring(flags[flagName] or min)
+            Label.TextColor3 = theme.mutedText
+            Label.TextSize = 11
+            Label.Font = Enum.Font.Gotham
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.Parent = Container
+
+            local Track = Instance.new("Frame")
+            Track.Size = UDim2.new(1, 0, 0, 4)
+            Track.Position = UDim2.new(0, 0, 0, 30)
+            Track.BackgroundColor3 = theme.panelAlt
+            Track.BorderSizePixel = 0
+            Track.Parent = Container
+
+            local Fill = Instance.new("Frame")
+            Fill.Size = UDim2.new(0.5, 0, 1, 0)
+            Fill.BackgroundColor3 = theme.accent
+            Fill.BorderSizePixel = 0
+            Fill.Parent = Track
+
+            local current = flags[flagName] or min
+            Fill.Size = UDim2.new((current - min) / (max - min), 0, 1, 0)
+
+            local dragging = false
+
+            Track.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = true
+                end
+            end)
+
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = false
+                end
+            end)
+
+            UserInputService.InputChanged:Connect(function(input)
+                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    local relPos = math.clamp(
+                        (input.Position.X - Track.AbsolutePosition.X) / Track.AbsoluteSize.X, 0, 1
+                    )
+                    local value = math.floor(min + (max - min) * relPos + 0.5)
+                    Fill.Size = UDim2.new(relPos, 0, 1, 0)
+                    Label.Text = text .. ": " .. value
+                    flags[flagName] = value
+                    if callback then callback(value) end
+                end
+            end)
+        end
+
+        function SA:AddLabel(text)
+            co = co + 1
+
+            local Lbl = Instance.new("TextLabel")
+            Lbl.Size = UDim2.new(1, 0, 0, 16)
+            Lbl.BackgroundTransparency = 1
+            Lbl.Text = text
+            Lbl.TextColor3 = theme.mutedText
+            Lbl.TextSize = 10
+            Lbl.Font = Enum.Font.Gotham
+            Lbl.TextXAlignment = Enum.TextXAlignment.Left
+            Lbl.LayoutOrder = co
+            Lbl.Parent = Section
+
+            return Lbl
+        end
+
+        return SA
+    end
+
+    return API
+end
+
+-- ═════════════════════════════════════════════
+-- BUILD TABS + FEATURES
+-- ═════════════════════════════════════════════
+
+-- DEFENSE TAB
+local DefenseTab = createTab("Defense")
+
+local defSection = DefenseTab:AddSection("Protection")
+defSection:AddToggle("Anti-Grab", "AntiGrab")
+defSection:AddToggle("Anti-Kick (Shuriken)", "AntiKick")
+defSection:AddToggle("PCLD Break Anti-Kick", "PCLDBreakAntiKick")
+defSection:AddToggle("Anti-Blobman", "AntiBlobman")
+defSection:AddToggle("Anti-Banana", "AntiBananna")
+defSection:AddToggle("Auto Reset", "AutoReset")
+
+local defSection2 = DefenseTab:AddSection("Anti-Lag")
+defSection:AddToggle("Anti Lag", "AntiLag")
+defSection:AddToggle("Anti Input Lag", "AntiInputLag")
+
+-- COMBAT TAB
+local CombatTab = createTab("Combat")
+
+local combatSection = CombatTab:AddSection("Fling")
+combatSection:AddToggle("Super Fling", "SuperFlingEnabled")
+combatSection:AddSlider("Fling Strength", "FlingStrength", 100, 2000)
+
+local combatSection2 = CombatTab:AddSection("Grab Modifiers")
+combatSection2:AddToggle("Poison Grab", "Poison_Grab")
+combatSection2:AddToggle("Burn Grab", "Burn_Grab")
+combatSection2:AddToggle("Death Grab", "Death_Grab")
+combatSection2:AddToggle("Kick Grab", "KickGrab")
+combatSection2:AddToggle("Massless Grab", "MasslessGrab")
+combatSection2:AddToggle("Further Extend", "FutherExtend")
+
+-- AURA TAB
+local AuraTab = createTab("Auras")
+
+local auraSection = AuraTab:AddSection("Combat Auras")
+auraSection:AddToggle("Poison Aura", "Poison_Aura")
+auraSection:AddToggle("Attraction Aura", "AttractionAura")
+auraSection:AddToggle("Death Aura", "DeathAura")
+auraSection:AddToggle("Kick Aura", "KickAura")
+auraSection:AddToggle("Unstick Aura", "UnstickAura")
+auraSection:AddSlider("Kick Aura Radius", "KickAuraRadius", 10, 100)
+
+-- MOVEMENT TAB
+local MoveTab = createTab("Movement")
+
+local moveSection = MoveTab:AddSection("Character")
+moveSection:AddToggle("Noclip", "noclip")
+moveSection:AddToggle("Infinite Jump", "infinjump")
+moveSection:AddToggle("Super Speed", "SuperSpeed")
+moveSection:AddSlider("Speed Value", "SpeedValue", 16, 200)
+moveSection:AddToggle("Third Person", "thirdPerson")
+
+-- TARGET TAB
+local TargetTab = createTab("Targets")
+
+local targetSection = TargetTab:AddSection("Loop Actions")
+targetSection:AddToggle("Loop Kill", "LoopKill")
+targetSection:AddToggle("Loop Kill (Permanent)", "LoopKillPerm")
+targetSection:AddToggle("Kill All", "KillAll")
+targetSection:AddToggle("Bring All", "BringAll")
+
+print("[KRAMPUS UI] Loaded — RightShift to toggle")
