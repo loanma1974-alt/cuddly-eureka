@@ -1,13 +1,3 @@
-task.spawn(function()
-	local ok, result = pcall(function()
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/HomerSimpson88354/EternoSploitAssets/refs/heads/main/start.lua"))()
-	end)
-
-	if not ok then
-		warn("failed to load external loadstrings", result)
-	end
-end)
-
 local tbl = {
 	Services = {},
 	Refs = {},
